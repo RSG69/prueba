@@ -5,5 +5,5 @@ assets/external/
 *.db
 .web
 .pc/
-.web/.next/
+.web/.next/git init
 .web/node_modules/
