@@ -1,8 +1,16 @@
 import reflex as rx
 
+# =====================
+# 🎨 TEMA PERSONALIZADO
+# =====================
 custom_theme = rx.theme(color_scheme="orange")
 
+
+# ======================================
+# 📌 STATE (OBLIGA CREAR BACKEND)
+# ======================================
 class State(rx.State):
+    # Datos de tu galería
     DESAYUNOS = [
         ["Café con leche y croissant", "/Cafe_con_leche_y_cruasan.jpg"],
         ["Café con leche y tostadas con mermelada", "/cafe_con_leche_y_tostada_con_mermelada.jpg"],
@@ -24,16 +32,26 @@ class State(rx.State):
         ["Lentejas caseras", "/lentejas.jpg"]
     ]
 
+    # Forzamos backend agregando variable persistente
+    visitas: int = 0
+
+    # Acción invisible que incrementa visitas
+    def contar_visita(self):
+        self.visitas += 1
+
+    # Índices para el carrusel
     index_desayuno: int = 0
     index_almuerzo: int = 0
     index_tapa: int = 0
     index_plato: int = 0
 
+    # Eventos
     def next_desayuno(self): self.index_desayuno = (self.index_desayuno + 1) % len(self.DESAYUNOS)
     def next_almuerzo(self): self.index_almuerzo = (self.index_almuerzo + 1) % len(self.ALMUERZOS)
     def next_tapa(self): self.index_tapa = (self.index_tapa + 1) % len(self.TAPAS)
     def next_plato(self): self.index_plato = (self.index_plato + 1) % len(self.PLATOS)
 
+    # Variables computadas (getter)
     @rx.var
     def desayuno_text(self) -> str: return self.DESAYUNOS[self.index_desayuno][0]
     @rx.var
@@ -55,6 +73,9 @@ class State(rx.State):
     def plato_img(self) -> str: return self.PLATOS[self.index_plato][1]
 
 
+# ====================
+# 🧱 COMPONENTES
+# ====================
 def header() -> rx.Component:
     return rx.box(
         rx.hstack(
@@ -77,7 +98,6 @@ def header() -> rx.Component:
 
 
 def crear_celda(titulo: str, texto: rx.Var, imagen: rx.Var, direccion: str, gradiente: str) -> rx.Component:
-    """Crea una celda del grid con un fondo degradado único"""
     return rx.box(
         rx.vstack(
             rx.heading(
@@ -102,10 +122,7 @@ def crear_celda(titulo: str, texto: rx.Var, imagen: rx.Var, direccion: str, grad
                     ),
                     class_name="carousel-image-wrapper",
                 ),
-                rx.text(
-                    texto,
-                    class_name="carousel-item-text",
-                ),
+                rx.text(texto, class_name="carousel-item-text"),
                 class_name="carousel-item",
             ),
         ),
@@ -142,34 +159,10 @@ def cuerpo() -> rx.Component:
     return rx.box(
         rx.box(
             rx.grid(
-                crear_celda(
-                    "DESAYUNOS",
-                    State.desayuno_text,
-                    State.desayuno_img,
-                    "up",
-                    "linear-gradient(135deg, #e6c193, #ED8F03)"
-                ),
-                crear_celda(
-                    "ALMUERZOS",
-                    State.almuerzo_text,
-                    State.almuerzo_img,
-                    "down",
-                    "linear-gradient(135deg, #43C6AC, #191654)"
-                ),
-                crear_celda(
-                    "TAPAS",
-                    State.tapa_text,
-                    State.tapa_img,
-                    "left",
-                    "linear-gradient(135deg, #F7971E, #FFD200)"
-                ),
-                crear_celda(
-                    "PLATOS COMBINADOS",
-                    State.plato_text,
-                    State.plato_img,
-                    "right",
-                    "linear-gradient(135deg, #8360c3, #2ebf91)"
-                ),
+                crear_celda("DESAYUNOS", State.desayuno_text, State.desayuno_img, "up", "linear-gradient(135deg, #e6c193, #ED8F03)"),
+                crear_celda("ALMUERZOS", State.almuerzo_text, State.almuerzo_img, "down", "linear-gradient(135deg, #43C6AC, #191654)"),
+                crear_celda("TAPAS", State.tapa_text, State.tapa_img, "left", "linear-gradient(135deg, #F7971E, #FFD200)"),
+                crear_celda("PLATOS COMBINADOS", State.plato_text, State.plato_img, "right", "linear-gradient(135deg, #8360c3, #2ebf91)"),
                 columns=rx.breakpoints(sm="1", md="2", lg="3"),
                 spacing="6",
                 justify="center",
@@ -180,94 +173,36 @@ def cuerpo() -> rx.Component:
             padding_top="100px",
             padding_bottom="100px",
             width="100%",
-            #height="calc(100vh - 130px)",
             overflow="visible",
             display="flex",
             justify_content="center",
             align_items="flex-start",
             position="relative",
-            class_name="grid-background",
         ),
 
-        # Botones ocultos que controlan el cambio de imagen
+        # 👁️ Texto visitas y botón visible (en orden correcto)
+        rx.text(f"👀 Visitas registradas: {State.visitas}", color="gray", margin_top="10px"),
+        rx.button("Registrar visita", on_click=State.contar_visita),
+
+        # Botones invisibles del carrusel
         rx.button("next", id="next-desayuno", on_click=State.next_desayuno, style={"display": "none"}),
         rx.button("next", id="next-almuerzo", on_click=State.next_almuerzo, style={"display": "none"}),
         rx.button("next", id="next-tapa", on_click=State.next_tapa, style={"display": "none"}),
         rx.button("next", id="next-plato", on_click=State.next_plato, style={"display": "none"}),
 
-        # Script modificado: la animación se aplica a las imágenes directamente
-        rx.script(r"""
-(function(){
-  const IN_DURATION  = 2000;
-  const VISIBLE_MS   = 3000;
-  const OUT_DURATION = 1800;
-  const START_DELAY  = 300;
+        # Script JS al final, pero antes del cierre
+        rx.script(src="/carousel.js"),
+        
 
-  const anims = {
-    up: {
-      in:  [{ transform: "translateY(60%)", opacity: 0 },
-            { transform: "translateY(0)", opacity: 1 }],
-      out: [{ transform: "translateY(0)", opacity: 1 },
-            { transform: "translateY(-60%)", opacity: 0 }]
-    },
-    down: {
-      in:  [{ transform: "translateY(-60%)", opacity: 0 },
-            { transform: "translateY(0)", opacity: 1 }],
-      out: [{ transform: "translateY(0)", opacity: 1 },
-            { transform: "translateY(60%)", opacity: 0 }]
-    },
-    left: {
-      in:  [{ transform: "translateX(60%)", opacity: 0 },
-            { transform: "translateX(0)", opacity: 1 }],
-      out: [{ transform: "translateX(0)", opacity: 1 },
-            { transform: "translateX(-60%)", opacity: 0 }]
-    },
-    right: {
-      in:  [{ transform: "translateX(-60%)", opacity: 0 },
-            { transform: "translateX(0)", opacity: 1 }],
-      out: [{ transform: "translateX(0)", opacity: 1 },
-            { transform: "translateX(60%)", opacity: 0 }]
-    },
-    fade: {
-      in:  [{ opacity: 0, transform: "scale(1.04)" },
-            { opacity: 1, transform: "scale(1)" }],
-      out: [{ opacity: 1, transform: "scale(1)" },
-            { opacity: 0, transform: "scale(1.04)" }]
-    }
-  };
-
-  const buttons = ["next-desayuno", "next-almuerzo", "next-tapa", "next-plato"];
-  const wait = (ms) => new Promise(res => setTimeout(res, ms));
-
-  async function runCellLoop(img, idx) {
-    const dir = img.dataset.direction || "fade";
-    const anim = anims[dir] || anims.fade;
-    const buttonId = buttons[idx];
-
-    while (true) {
-      img.style.opacity = 0;
-      await img.animate(anim.in, { duration: IN_DURATION, easing: "ease-out", fill: "forwards" }).finished;
-      await wait(VISIBLE_MS);
-      await img.animate(anim.out, { duration: OUT_DURATION, easing: "ease-in", fill: "forwards" }).finished;
-
-      const btn = document.getElementById(buttonId);
-      if (btn) btn.click();
-      await wait(50);
-    }
-  }
-
-  setTimeout(() => {
-    document.querySelectorAll(".carousel-item-img")
-      .forEach((img, idx) => runCellLoop(img, idx));
-  }, START_DELAY);
-})();
-"""),
         position="relative",
         width="100%",
         display="flex",
+        flex_direction="column",
+        align_items="center",
         justify_content="center",
         z_index="1",
     )
+
 
 
 def galeria() -> rx.Component:
@@ -281,11 +216,15 @@ def galeria() -> rx.Component:
     )
 
 
+# ====================
+# 🚀 APP
+# ====================
 app = rx.App(stylesheets=["/carousel.css"], theme=custom_theme)
 app.add_page(galeria, title="Galería con gradientes y animaciones", route="/")
 
 if __name__ == "__main__":
     app.run()
+
 
 
 

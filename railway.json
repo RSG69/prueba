@@ -3,6 +3,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "reflex run --env prod"
+    "runtime": "CONTAINER"
   }
 }
+

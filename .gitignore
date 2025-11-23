@@ -1,9 +1,11 @@
+.venv/
 __pycache__/
+.states/
+.web/node_modules/
 *.py[cod]
-.states
 assets/external/
 *.db
 .web
 .pc/
 .web/.next/git init
-.web/node_modules/
+
